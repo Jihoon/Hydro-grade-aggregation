@@ -1,0 +1,12 @@
+
+*.pper
+*.rda
+*.db
+.Rproj.user/*
+.RData
+.Rhistory
+*.bak
+*.Rproj
+*.dat
+*.xlsx
+*.pptx
