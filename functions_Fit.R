@@ -68,9 +68,8 @@ FitStepFunc <- function(data.sprd, nstep, nregion = 11, region, s=s.idx, eps = 1
   return(list(final_cost_df0, rsq.val))
 }
 
-GenerateInvCostCurve <- function(res, # National or Regional
-                                 focus.res, # Names of regions/nations
-                                 nstep # # of steps in the curve
+ReadIMAGEData <- function(res, # National or Regional
+                                 focus.res # Names of regions/nations
                                  ) {
   if (res=="Nat") {
     cost_curves.sprd <- read_excel("HYDRO_cost_country_Gernaat et al. - JM.xlsx", 
@@ -123,7 +122,14 @@ GenerateInvCostCurve <- function(res, # National or Regional
   
   max_pot <- max_pot * 0.000277777778 / 365 / 24   # From GJ to GWa
 
-  
+  return(list(data.comb, cost_curves.sprd, max_pot, region))
+}
+
+
+GenerateInvCostCurve <- function(focus.res, # Names of regions/nations
+                                 nstep, # # of steps in the curve
+                                 cost_curves
+) {  
   ### USE REGRESSION TREE TO FIT THE CURVES WITH STEP FUNCTION ###
   #----
   # define the number of steps desired
@@ -148,7 +154,7 @@ GenerateInvCostCurve <- function(res, # National or Regional
   
   rsq.ord <- rsq.val %>% filter(n_split==nstep)
   
-  return(list(final_cost_df0, max_pot, data.comb))
+  return(final_cost_df0)
 }
 
 

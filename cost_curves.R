@@ -12,8 +12,7 @@ source_url("https://raw.githubusercontent.com/ggrothendieck/gsubfn/master/R/list
 source("functions_Fit.R")
 
 ### Run environment set up
-res <- "Reg" #  "Nat" #
-focus.res <- c("EEU","FSU") # "RUS" #
+res <- "Reg" #  "Nat" ##
 # nregion = length(region)
 
 # Decide # of Steps
@@ -24,45 +23,16 @@ n.substep <- 4
 ### max_pot: all regions maximum potential in GWa
 ### final_cost_df0: yval (inv_cost), xval (relative potential, 0 to 1), msg_reg (region name)
 ### data.combined: Intermediate tibble having all cost & LF information
-list[final_cost_df0, max_pot, data.combined]  <- GenerateInvCostCurve(res, focus.res, n.step)
+list[data.combined, cost_curves, max_pot, reg.names]  <- ReadIMAGEData(res)
 
+focus.res <- reg.names # c("EEU","FSU") # "RUS" 
+
+final_cost_df0 <- GenerateInvCostCurve(focus.res, n.step, cost_curves)
 sub_LF.all <- GenerateCapacityFactorCurve(res, focus.res, n.substep, data.combined, max_pot)
 
 
 
-
-
-
-
-
-# final_LF_df0 <- annual_avg_lf1.ord %>% 
-#   group_by(msg_reg,xval) %>% 
-#   summarise(avgLF = mean(LF_agg))
-
-# Quantify total error in LF curve estimation
-# LF <- annual_avg_lf1.ord %>% left_join(final_LF_df0) %>% mutate(sqerr=(LF_agg-avgLF)^2)
-# paste("LF rmse (ordered) =", sqrt(mean(LF$sqerr)))
-# 
-# # Quantify total error in CC curve estimation
-# # temp <- final_cost_df0 %>% select(-yval) %>% mutate(n=xval*100) %>%
-# #   mutate(n_diff=n-lag(n)) %>% mutate_cond(is.na(n_diff)|n_diff<0, n_diff=n+1)  # Hmm, I couldn't have done simply annual_avg_lf1.ord$xval
-# # st <- as.numeric(unlist(apply(temp, 1, function(x) {rep(x[1], x[4])})))
-# 
-# # Quantify total error in CC curve estimation
-# CC <- cost_curves %>% ungroup() %>% 
-#   filter(msg_reg==focus.res) %>%
-#   mutate(xval=annual_avg_lf1.ord$xval) %>% left_join(final_cost_df0) %>% mutate(sqerr=(cost_agg-yval)^2)
-# paste("CC rmse (ordered) =", sqrt(mean(CC$sqerr)))
-
-
-
-#----
-### PLOT ORIGINAL AND FITTED CURVES ###
-## final dfs for plotting and exporting ##
-# final_LF_df_pl <- full_join(a,final_LF_df0) %>% 
-#   group_by(msg_reg) %>% 
-#   filter(msg_reg==focus.res) %>%
-#   mutate(avgLF = na.locf(avgLF, fromLast = T))
+### final dfs for plotting and exporting ###
 
 final_cost_df_pl <- full_join(a,final_cost_df0) %>% 
   group_by(msg_reg) %>% 
@@ -75,6 +45,14 @@ final_LF_df_pl <- sub_LF.all %>%
   # mutate(xval = xval*(max_pot %>% select(!!focus.res) %>% as.numeric())) %>% # Already taken care of
   mutate(commodity=cut(xval, unique(final_cost_df_pl$xval), labels=paste0("hydro_c", 1:nstep))) %>%     # To mark the technology levels to LF curve
   mutate(x.interval=xval-lag(xval))
+
+
+
+
+
+
+### PLOT ORIGINAL AND FITTED CURVES ###
+
 
 # Making it to MESSAGE format (JM) w/ incremental intervals
 # final_LF_df_pl <- final_LF_df_pl %>% mutate(xval=xval-lag(xval)) %>% slice(-1) %>% 
