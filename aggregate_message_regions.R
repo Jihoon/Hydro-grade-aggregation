@@ -21,13 +21,21 @@ load_fact0 <- read_excel("HYDRO_cost_country_Gernaat et al..xlsx",
 names(cap_cost0)[1]="x"
 names(load_fact0)[1]="x"
 
-# Reorder based on cost curves (JMin)
+
+### JM : What is the point of having x=0? Remove it for now. (it requires many special consideration for curve fitting for the first step.)
+cap_cost0 <- cap_cost0 %>% slice(-1)
+load_fact0 <- load_fact0 %>% slice(-1)
+###
+
+### Reorder based on cost curves (JMin) 
+ctyname.org <- names(cap_cost0) # Keep the order of countries from the original file.
+
 cap_cost0.long <- cap_cost0 %>% gather(country, cost, -x)
 load_fact0.long <- load_fact0 %>% gather(country, lfact, -x)
-data.comb.cty <- cap_cost0.long %>% left_join(load_fact0.long) %>% arrange(country, cost) %>% group_by(country) %>% mutate(x=seq(0,1,.01))
+data.comb.cty <- cap_cost0.long %>% left_join(load_fact0.long) %>% arrange(country, cost) %>% group_by(country) %>% mutate(x=seq(0.01, 1, 0.01))
 
-cap_cost0 <- data.comb.cty %>% select(-lfact)  %>% spread(country, cost)
-load_fact0 <- data.comb.cty %>% select(-cost)  %>% spread(country, lfact)
+cap_cost0 <- data.comb.cty %>% select(-lfact) %>% spread(country, cost) %>% select(ctyname.org)
+load_fact0 <- data.comb.cty %>% select(-cost) %>% spread(country, lfact) %>% select(ctyname.org)
 ###
 
 regions <- tail(names(cap_cost0),-1)
@@ -136,17 +144,23 @@ ggplot()+
   geom_line(data = as.data.frame( bind_rows(load_fact, gbl_LF %>% mutate(msg_reg = "WLD") %>% select(x,msg_reg,LF_agg)) ),aes(x,LF_agg,colour = msg_reg)) +
   geom_line(data = as.data.frame( gbl_LF  ),aes(x,LF_agg),size = 1, colour = "black")
 
+# Vinca's aggregation
+# write.csv(max_pot_agg,"max_potential_MSG_reg.csv",row.names = F)
+# write.csv(cap_cost,"cap_cost_MSG_reg.csv",row.names = F)
+# write.csv(load_fact,"load_factor_MSG_reg.csv",row.names = F)
 
-write.csv(max_pot_agg,"max_potential_MSG_reg.csv",row.names = F)
-write.csv(cap_cost,"cap_cost_MSG_reg.csv",row.names = F)
-write.csv(load_fact,"load_factor_MSG_reg.csv",row.names = F)
 
+# Reorder based on cost curves (JMin) - Reordering at the beginning will be right. (No reason to order the data based on LCOE from IMAGE)
+# cap_cost.ord <- cap_cost %>% arrange(msg_reg, cost_agg)
+# load_fact.ord <- (cap_cost.ord %>% select(-cost_agg)) %>% left_join(load_fact)
+# cap_cost.ord <- cap_cost.ord %>% group_by(msg_reg) %>% mutate(x=seq(0.01, 1, 0.01)) # reset x index
+# load_fact.ord <- load_fact.ord %>% group_by(msg_reg) %>% mutate(x=seq(0.01, 1, 0.01)) # reset x index
 
-write.xlsx(as.data.frame(max_pot_agg), "HYDRO_cost_MESSAGE_reg.ord.xlsx", "MAX_POTENTIAL",
+write.xlsx(as.data.frame(max_pot_agg), "HYDRO_cost_MESSAGE_reg.ordered.xlsx", "MAX_POTENTIAL",
                  row.names = FALSE, col.names = TRUE, append = FALSE)
-write.xlsx(as.data.frame(load_fact), "HYDRO_cost_MESSAGE_reg.ord.xlsx", "LOAD_FACTOR",
+write.xlsx(as.data.frame(load_fact), "HYDRO_cost_MESSAGE_reg.ordered.xlsx", "LOAD_FACTOR",
                  row.names = FALSE, col.names = TRUE, append = TRUE)
-write.xlsx(as.data.frame(cap_cost), "HYDRO_cost_MESSAGE_reg.ord.xlsx", "CAP_COST", 
+write.xlsx(as.data.frame(cap_cost), "HYDRO_cost_MESSAGE_reg.ordered.xlsx", "CAP_COST", 
                  row.names = FALSE, col.names = TRUE, append = TRUE)
 
 

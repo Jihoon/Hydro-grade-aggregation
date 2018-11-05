@@ -74,10 +74,8 @@ ReadIMAGEData <- function(res, # National or Regional
   if (res=="Nat") {
     cost_curves.sprd <- read_excel("HYDRO_cost_country_Gernaat et al. - JM.xlsx", 
                                    sheet = "CAP_COST")
-    
     max_pot <- read_excel("HYDRO_cost_country_Gernaat et al. - JM.xlsx", 
                           sheet = "MAX_POTENTIAL")
-    
     load_fact <- read_excel("HYDRO_cost_country_Gernaat et al. - JM.xlsx", 
                             sheet = "LOAD_FACTOR")
     
@@ -93,18 +91,22 @@ ReadIMAGEData <- function(res, # National or Regional
     names(load_fact) = c("x", region) 
     names(max_pot) = region 
     
+    # Remove x=0 row
+    load_fact <- load_fact %>% slice(-1)
+    cost_curves.sprd <- cost_curves.sprd %>% slice(-1)
+    
     # Reorder based on cost curves (JMin)
     cost_curves <- cost_curves.sprd %>% gather(msg_reg, cost_agg, -x)
     load_fact.long <- load_fact %>% gather(msg_reg, LF_agg, -x)
-    data.comb <- cost_curves %>% left_join(load_fact.long) %>% arrange(msg_reg, cost_agg) %>% group_by(msg_reg) %>% mutate(x=seq(0,1,.01))
+    data.comb <- cost_curves %>% left_join(load_fact.long) %>% arrange(msg_reg, cost_agg) %>% group_by(msg_reg) %>% mutate(x=seq(0.01, 1, 0.01))
     
     cost_curves.sprd <- data.comb %>% select(-LF_agg) %>% spread(msg_reg, cost_agg) # Adriano keeps only this as wide form.
   } else if (res=="Reg") {
-    cost_curves <- read_excel("HYDRO_cost_MESSAGE_reg.ord.xlsx", 
+    cost_curves <- read_excel("HYDRO_cost_MESSAGE_reg.ordered.xlsx", 
                               sheet = "CAP_COST")
-    load_fact <- read_excel("HYDRO_cost_MESSAGE_reg.ord.xlsx", 
+    load_fact <- read_excel("HYDRO_cost_MESSAGE_reg.ordered.xlsx", 
                             sheet = "LOAD_FACTOR")
-    max_pot <- read_excel("HYDRO_cost_MESSAGE_reg.ord.xlsx", 
+    max_pot <- read_excel("HYDRO_cost_MESSAGE_reg.ordered.xlsx", 
                           sheet = "MAX_POTENTIAL")
     a <- data.frame(t(max_pot[,2]))
     names(a) <- t(max_pot[,1])
@@ -135,13 +137,13 @@ GenerateInvCostCurve <- function(focus.res, # Names of regions/nations
   # define the number of steps desired
   s.idx = cost_curves.sprd$x
   # to make the first step for plotting
-  a= data.frame(msg_reg = as.character(head(region,-1)), xval = 0)
+  a= data.frame(msg_reg = as.character(head(focus.res,-1)), xval = 0)
   a$msg_reg = as.character(a$msg_reg)
   eps = 1e-6
   
   # list[final_cost_df0, rsq.val] <- FitStepFunc(cost_curves.sprd, nstep, nregion = nregion, region)
   list[final_cost_df0, rsq.val] <- FitStepFunc(cost_curves.sprd %>% select(x, !!focus.res), 
-                                               nstep, nregion = length(focus.res), region = focus.res)
+                                               nstep, nregion = length(focus.res), region = focus.res, s.idx)
   
   
   ### Check R-sq for the fit
@@ -177,9 +179,9 @@ GenerateCapacityFactorCurve <- function(res, # National or Regional
   
   # Reorder LF within each interval
   annual_avg_lf1.ord <- annual_avg_lf1 %>% arrange(msg_reg, xval, -LF_agg) %>% group_by(msg_reg) %>%
-    mutate(x=seq(0, 1, .01)) %>% left_join(max_pot) %>%
+    mutate(x=seq(0.01, 1, 0.01)) %>% left_join(max_pot) %>%
     # mutate(x = x*(max_pot %>% select(!!focus.res) %>% as.numeric()))
-    mutate(x = x*pot_agg)
+    mutate(x = x*pot_agg) 
   
   # steps <- unique(annual_avg_lf1$xval)
   steps.all <- annual_avg_lf1.ord %>% count(xval)
@@ -187,6 +189,8 @@ GenerateCapacityFactorCurve <- function(res, # National or Regional
   # Empty list with names of focus.res
   sub_LF.all <- vector("list", length(focus.res)) 
   names(sub_LF.all) <- focus.res
+  # org_LF.all <- vector("list", length(focus.res)) 
+  # names(org_LF.all) <- focus.res
   
   for (j in focus.res) {
     sub_LF <- list()
@@ -198,8 +202,12 @@ GenerateCapacityFactorCurve <- function(res, # National or Regional
                                                 n.substep, nregion = 1, region = "LF_agg", s=temp$x)
     }
     sub_LF.all[[j]] <- bind_rows(sub_LF) %>% rename(avgLF=yval) %>% mutate(msg_reg=j)
-    sub_LF.all[[j]] <- sub_LF.all[[j]] %>% slice(1) %>% mutate(xval=0) %>% rbind(sub_LF.all[[j]]) 
+    sub_LF.all[[j]] <- sub_LF.all[[j]] %>% 
+      slice(1) %>% 
+      mutate(xval=0) %>% rbind(sub_LF.all[[j]]) 
+    
+    # org_LF.all[[j]] <- annual_avg_lf1.ord
   }
   
-  return(bind_rows(sub_LF.all))
+  return(list(bind_rows(sub_LF.all), annual_avg_lf1.ord))
 }

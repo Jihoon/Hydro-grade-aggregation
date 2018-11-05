@@ -10,3 +10,5 @@
 *.dat
 *.xlsx
 *.pptx
+.Rproj.user
+*.csv
