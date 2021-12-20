@@ -105,13 +105,11 @@ ReadIMAGEData <- function(res, # National or Regional
     data.comb <- cost_curves %>% left_join(load_fact.long) %>% arrange(msg_reg, cost_agg) %>% group_by(msg_reg) %>% mutate(x=seq(0.01, 1, 0.01))
     
     cost_curves.sprd <- data.comb %>% select(-LF_agg) %>% spread(msg_reg, cost_agg) # Adriano keeps only this as wide form.
-  } else if (res=="Reg") {
-    cost_curves <- read_excel("HYDRO_cost_MESSAGE_reg_update.ordered.xlsx", 
-                              sheet = "CAP_COST")
-    load_fact <- read_excel("HYDRO_cost_MESSAGE_reg_update.ordered.xlsx", 
-                            sheet = "LOAD_FACTOR")
-    max_pot <- read_excel("HYDRO_cost_MESSAGE_reg_update.ordered.xlsx", 
-                          sheet = "MAX_POTENTIAL")
+  } else if (res=="R12" | res=="R11") {
+    fname = paste0("HYDRO_cost_MESSAGE_", res, "_update.ordered.xlsx")
+    cost_curves <- read_excel(fname, sheet = "CAP_COST")
+    load_fact <- read_excel(fname,sheet = "LOAD_FACTOR")
+    max_pot <- read_excel(fname, sheet = "MAX_POTENTIAL")
     # a <- data.frame(t(max_pot[,2]))
     # names(a) <- t(max_pot[,1])
     # max_pot <- a

@@ -34,7 +34,7 @@ data.comb.cty <- cap_cost0.long %>% left_join(load_fact0.long) %>%
 
 regions <- tail(names(cap_cost0),-2)
 
-reg_map <- read_csv("P:/ene.model/data/regions/message.csv")
+reg_map <- read_csv("P:/ene.model/data/regions/message - R12.csv")
 names(reg_map) = c("ISO","name","msg_reg","five_reg")
 
 map_hydro_reg <- data.frame(ISO = regions, stringsAsFactors = F)
@@ -156,11 +156,11 @@ ggplot()+
 # cap_cost.ord <- cap_cost.ord %>% group_by(msg_reg) %>% mutate(x=seq(0.01, 1, 0.01)) # reset x index
 # load_fact.ord <- load_fact.ord %>% group_by(msg_reg) %>% mutate(x=seq(0.01, 1, 0.01)) # reset x index
 
-write.xlsx(as.data.frame(max_pot_agg), "HYDRO_cost_MESSAGE_reg_update.ordered.xlsx", "MAX_POTENTIAL",
+write.xlsx(as.data.frame(max_pot_agg), "HYDRO_cost_MESSAGE_R12_update.ordered.xlsx", "MAX_POTENTIAL",
                  row.names = FALSE, col.names = TRUE, append = FALSE)
-write.xlsx(as.data.frame(load_fact), "HYDRO_cost_MESSAGE_reg_update.ordered.xlsx", "LOAD_FACTOR",
+write.xlsx(as.data.frame(load_fact), "HYDRO_cost_MESSAGE_R12_update.ordered.xlsx", "LOAD_FACTOR",
                  row.names = FALSE, col.names = TRUE, append = TRUE)
-write.xlsx(as.data.frame(cap_cost), "HYDRO_cost_MESSAGE_reg_update.ordered.xlsx", "CAP_COST", 
+write.xlsx(as.data.frame(cap_cost), "HYDRO_cost_MESSAGE_R12_update.ordered.xlsx", "CAP_COST", 
                  row.names = FALSE, col.names = TRUE, append = TRUE)
 
 

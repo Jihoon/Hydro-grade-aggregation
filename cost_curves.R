@@ -13,7 +13,7 @@ source_url("https://raw.githubusercontent.com/ggrothendieck/gsubfn/master/R/list
 source("functions_Fit.R")
 
 ### Run environment set up
-res <- "Reg" #  "Nat" ##
+res <- "R12" #"R11" #  "Nat" ##
 # nregion = length(region)
 
 # Decide # of Steps
@@ -43,9 +43,11 @@ final_cost_df_pl <- full_join(a, final_cost_df0) %>%
   left_join(max_pot) %>%
   mutate(yval = na.locf(yval, fromLast = T), 
          xval = xval*pot_agg) %>%
-  rename(avgIC = yval) %>% select(-pot_agg) %>% arrange(code, msg_reg, xval)
+  rename(avgIC = yval) %>% select(-pot_agg) %>% arrange(code, msg_reg, xval) %>%
+  mutate(xval = round(xval, 4)) # Decimal numbers need to match for a correct join below.
 
 final_LF_df_pl <- sub_LF.all %>%
+  mutate(xval = round(xval, 4)) %>%
   group_by(code, msg_reg) %>%
   left_join(final_cost_df_pl %>% select(code, msg_reg, xval) %>% 
               mutate(x.CC=1)) %>%  # have x.CC to mark the step positions
